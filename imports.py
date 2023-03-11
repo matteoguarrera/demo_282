@@ -63,7 +63,7 @@ def plot_norms(out_GT, out_rnn, out_kf, t_warmup = 0):
 
 def train(model, optimizer, criterion, epochs, batch_size, seed, TRAIN_DATA, TEST_DATA):
   
-  fig, (ax1, ax2) = plt.subplots(2,1)
+  fig, ax = plt.subplots(1,1)
   model.to(device)
   model.train()
   train_losses = []
@@ -91,9 +91,9 @@ def train(model, optimizer, criterion, epochs, batch_size, seed, TRAIN_DATA, TES
           if (i + 1) % 10 == 0:
               progress_bar.set_description(f"Epoch: {epoch:2d} Loss: {np.mean(train_losses[-10:]):.3f}")
         
-      ax1.plot(train_losses);
-      ax1.set_xlabel('iterations')
-      ax1.set_ylabel('loss')
+      ax.plot(train_losses);
+      ax.set_xlabel('iterations')
+      ax.set_ylabel('loss')
         
       
   with torch.no_grad():
