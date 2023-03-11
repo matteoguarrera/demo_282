@@ -24,7 +24,7 @@ from ipywidgets import interactive, widgets, Layout
 from IPython.display import display, HTML
 
 
-
+####################################################################################
 # Visualizations 
 # Could be an idea inserting a slider to move t_warmup
 def plot_norms(out_GT, out_rnn, out_kf, t_warmup = 0):
@@ -55,3 +55,64 @@ def plot_norms(out_GT, out_rnn, out_kf, t_warmup = 0):
     ax[1].title.set_text('1 norm')
     ax[2].title.set_text('2 norm')
     ax[3].title.set_text('inf norm')
+
+
+
+####################################################################################
+# Train
+
+def train(model, optimizer, criterion, epochs, batch_size, seed, TRAIN_DATA, TEST_DATA):
+  
+  fig, (ax1, ax2) = plt.subplots(2,1)
+  model.to(device)
+  model.train()
+  train_losses = []
+  valid_losses = []
+  for epoch in range(epochs):
+      random.seed(seed + epoch)
+      np.random.seed(seed + epoch)
+      torch.manual_seed(seed + epoch)
+      n_correct, n_total = 0, 0
+      progress_bar = tqdm(range(0, len(TRAIN_DATA)//batch_size))
+      for i in progress_bar: 
+
+          batch_X = TRAIN_DATA[batch_size*i:batch_size*(i+1), :, 0].unsqueeze(-1)
+          batch_Y = TRAIN_DATA[batch_size*i:batch_size*(i+1), :, 1].unsqueeze(-1)
+
+          logits = model(batch_X)
+          loss = criterion(logits, batch_Y)
+          train_losses.append(loss.item())
+
+          optimizer.zero_grad()
+          loss.backward()
+          optimizer.step()
+          # wandb.log({"train loss": loss})
+
+          if (i + 1) % 10 == 0:
+              progress_bar.set_description(f"Epoch: {epoch:2d} Loss: {np.mean(train_losses[-10:]):.3f}")
+        
+      ax1.plot(train_losses);
+      
+  with torch.no_grad():
+      progress_bar = tqdm(range(0, len(TEST_DATA)//batch_size))    
+      for i in progress_bar:
+          batch_X = TEST_DATA[batch_size*i:batch_size*(i+1), :, 0].unsqueeze(-1)
+          batch_Y = TEST_DATA[batch_size*i:batch_size*(i+1), :, 1].unsqueeze(-1)
+
+          logits = model(batch_X)
+          loss = criterion(logits, batch_Y)
+          valid_losses.append(loss.item())
+
+          if (i + 1) % 10 == 0:
+              progress_bar.set_description(f"[{i}]")
+
+      ax2.plot(valid_losses)
+  # wandb.log({"eval accuracy": np.mean(valid_losses)})
+
+      
+  print(f"Eval Accuracy: {np.mean(valid_losses)}")
+  
+  # Mark the run as finished
+  # wandb.finish()
+  
+  return train_losses, valid_losses
