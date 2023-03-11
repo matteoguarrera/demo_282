@@ -92,6 +92,9 @@ def train(model, optimizer, criterion, epochs, batch_size, seed, TRAIN_DATA, TES
               progress_bar.set_description(f"Epoch: {epoch:2d} Loss: {np.mean(train_losses[-10:]):.3f}")
         
       ax1.plot(train_losses);
+      ax1.set_xlabel('iterations')
+      ax1.set_ylabel('loss')
+        
       
   with torch.no_grad():
       progress_bar = tqdm(range(0, len(TEST_DATA)//batch_size))    
@@ -106,7 +109,7 @@ def train(model, optimizer, criterion, epochs, batch_size, seed, TRAIN_DATA, TES
           if (i + 1) % 10 == 0:
               progress_bar.set_description(f"[{i}]")
 
-      ax2.plot(valid_losses)
+#       ax2.plot(valid_losses)
   # wandb.log({"eval accuracy": np.mean(valid_losses)})
 
       
