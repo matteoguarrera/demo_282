@@ -1,9 +1,9 @@
 root_folder = ""
 import os
 import sys
-import inspect
+# import inspect
 sys.path.append(root_folder)
-from collections import Counter
+# from collections import Counter
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -12,10 +12,7 @@ from tqdm import tqdm
 
 import random
 import numpy as np
-import json
-
 import matplotlib.pyplot as plt
-# from utils import validate_to_array
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -23,6 +20,7 @@ import IPython
 from ipywidgets import interactive, widgets, Layout
 from IPython.display import display, HTML
 
+from demo_282.RNN import RecurrentClassifier 
 
 ####################################################################################
 # Visualizations 
@@ -61,14 +59,27 @@ def plot_norms(out_GT, out_rnn, out_kf, t_warmup = 0):
 ####################################################################################
 # Train
 
-def train(model, optimizer, criterion, epochs, batch_size, seed, TRAIN_DATA, TEST_DATA):
+def train(hyperparam_dict, seed, TRAIN_DATA, TEST_DATA):
   
   fig, ax = plt.subplots(1,1)
+  batch_size = hyperparam_dict['batch_size']
+  device = hyperparam_dict['device']
+  criterion = hyperparam_dict['criterion']
+
+  model = RecurrentClassifier(num_layers = 1, hidden_size = hyperparam_dict['hidden_size'], 
+                                 model_type = hyperparam_dict['model_type'])
+  
+  list_to_device = lambda th_obj: [tensor.to(device) for tensor in th_obj]
+  
+  optimizer = optim.Adam(model.parameters(), 
+                        lr=hyperparam_dict['lr'], 
+                        weight_decay=hyperparam_dict['weight_decay'])    # use adam optimizer
+
   model.to(device)
   model.train()
   train_losses = []
   valid_losses = []
-  for epoch in range(epochs):
+  for epoch in range(hyperparam_dict['epochs']):
       random.seed(seed + epoch)
       np.random.seed(seed + epoch)
       torch.manual_seed(seed + epoch)
@@ -94,7 +105,7 @@ def train(model, optimizer, criterion, epochs, batch_size, seed, TRAIN_DATA, TES
       ax.plot(train_losses);
       ax.set_xlabel('iterations')
       ax.set_ylabel('loss')
-        
+      ax.grid()
       
   with torch.no_grad():
       progress_bar = tqdm(range(0, len(TEST_DATA)//batch_size))    
@@ -118,4 +129,4 @@ def train(model, optimizer, criterion, epochs, batch_size, seed, TRAIN_DATA, TES
   # Mark the run as finished
   # wandb.finish()
   
-  return train_losses, valid_losses
+  return train_losses, valid_losses, model
